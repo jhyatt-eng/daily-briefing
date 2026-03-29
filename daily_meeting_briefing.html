@@ -160,7 +160,10 @@ function isoEnd(d){   return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.g
 function shiftDate(n) {
   viewDate.setDate(viewDate.getDate()+n);
   document.getElementById('date-label').textContent = fmtDate(viewDate);
+  anthropicKey = anthropicKey || localStorage.getItem('ak') || '';
+  googleToken = googleToken || localStorage.getItem('gt') || '';
   if (anthropicKey && googleToken) generateSummary();
+  else if (anthropicKey && !googleToken) generateSummary();
 }
 
 // ─── Google OAuth (token flow — no backend needed) ────────────────────────────
@@ -207,6 +210,8 @@ async function fetchCalendarEvents(tMin, tMax) {
 
 // ─── Claude API ───────────────────────────────────────────────────────────────
 async function callClaude(system, user) {
+  // Re-read key from storage in case it was set after page load
+  if (!anthropicKey) anthropicKey = localStorage.getItem('ak') || '';
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01' },
@@ -304,7 +309,10 @@ function copyBookmark() {
 
 // ─── Generate Briefing ────────────────────────────────────────────────────────
 async function generateSummary() {
-  if (!anthropicKey || !googleToken) { showSetup(); return; }
+  anthropicKey = anthropicKey || localStorage.getItem('ak') || '';
+  googleToken = googleToken || localStorage.getItem('gt') || '';
+  googleClientId = googleClientId || localStorage.getItem('gc') || '';
+  if (!anthropicKey) { showSetup(); return; }
 
   const btn = document.getElementById('gen-btn');
   btn.textContent = 'Loading…'; btn.disabled = true;
