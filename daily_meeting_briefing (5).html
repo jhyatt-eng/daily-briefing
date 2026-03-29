@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Meeting Briefing</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; background: #f8f7f4; color: #1a1a18; min-height: 100vh; }
+
+.header { background: #fff; border-bottom: 0.5px solid rgba(0,0,0,0.12); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+.header-left h1 { font-size: 15px; font-weight: 500; }
+.header-left p { font-size: 11px; color: #888780; margin-top: 1px; }
+.btn { font-size: 13px; padding: 6px 13px; border: 0.5px solid rgba(0,0,0,0.2); border-radius: 8px; background: #fff; color: #1a1a18; cursor: pointer; }
+.btn:hover { background: #f1efe8; }
+.btn-primary { background: #1a1a18; color: #fff; border-color: transparent; }
+.btn-primary:hover { background: #333; }
+.btn-sm { font-size: 12px; padding: 4px 10px; }
+
+.main { max-width: 760px; margin: 0 auto; padding: 18px 14px; }
+.date-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.date-bar h2 { font-size: 16px; font-weight: 500; flex: 1; }
+.nav-btn { width: 30px; height: 30px; border: 0.5px solid rgba(0,0,0,0.18); border-radius: 7px; background: #fff; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.nav-btn:hover { background: #f1efe8; }
+
+.loading { text-align: center; padding: 60px 20px; }
+.spinner { width: 26px; height: 26px; border: 2px solid rgba(0,0,0,0.08); border-top-color: #1a1a18; border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading p { font-size: 13px; color: #888780; }
+
+.setup-card { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 14px; padding: 26px 22px; max-width: 520px; margin: 28px auto; }
+.setup-card h2 { font-size: 17px; font-weight: 500; margin-bottom: 8px; }
+.setup-card > p { font-size: 13px; color: #5f5e5a; line-height: 1.65; }
+.step { background: #f8f7f4; border-radius: 10px; padding: 14px 16px; margin-top: 14px; }
+.step-label { font-size: 11px; font-weight: 500; color: #888780; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
+.step h3 { font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+.step p { font-size: 13px; color: #5f5e5a; line-height: 1.6; }
+.input-row { display: flex; gap: 8px; margin-top: 9px; }
+.input-row input { flex: 1; font-size: 13px; padding: 7px 10px; border: 0.5px solid rgba(0,0,0,0.18); border-radius: 8px; min-width: 0; }
+.field-msg { font-size: 12px; margin-top: 6px; color: #888780; }
+.field-msg.error { color: #a32d2d; }
+.field-msg.ok { color: #0f6e56; font-weight: 500; }
+.url-box { background: #fff; border: 0.5px solid rgba(0,0,0,0.15); border-radius: 8px; padding: 9px 11px; font-size: 11px; font-family: monospace; color: #185fa5; word-break: break-all; margin-top: 8px; cursor: pointer; user-select: all; }
+.url-box:hover { background: #e6f1fb; }
+.divider { border: none; border-top: 0.5px solid rgba(0,0,0,0.08); margin: 16px 0; }
+
+.briefing-header { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 12px; padding: 14px 18px; margin-bottom: 12px; }
+.briefing-header h3 { font-size: 14px; font-weight: 500; }
+.briefing-header p { font-size: 12px; color: #888780; margin-top: 2px; }
+.stat-pills { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+.pill { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+.pill-gray { background: #f1efe8; color: #444441; }
+.pill-blue { background: #e6f1fb; color: #0c447c; }
+.pill-purple { background: #eeedfe; color: #3c3489; }
+
+.meeting-card { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 12px; padding: 15px 17px; margin-bottom: 10px; }
+.meeting-top { display: flex; gap: 10px; align-items: flex-start; }
+.time-chip { background: #f1efe8; color: #444441; font-size: 11px; font-weight: 500; padding: 3px 7px; border-radius: 5px; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+.meeting-title { font-size: 14px; font-weight: 500; line-height: 1.3; }
+.meeting-sub { font-size: 12px; color: #888780; margin-top: 2px; }
+.tags { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 4px; }
+.tag { font-size: 11px; font-weight: 500; padding: 2px 7px; border-radius: 5px; }
+.tag-blue { background: #e6f1fb; color: #185fa5; }
+.tag-green { background: #eaf3de; color: #27500a; }
+.tag-amber { background: #faeeda; color: #633806; }
+.tag-purple { background: #eeedfe; color: #3c3489; }
+
+.section { margin-top: 12px; border-top: 0.5px solid rgba(0,0,0,0.07); padding-top: 10px; }
+.section-label { font-size: 11px; font-weight: 500; color: #888780; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.section-body { font-size: 13px; line-height: 1.65; color: #1a1a18; }
+.context-box { background: #f1efe8; border-radius: 8px; padding: 9px 11px; font-size: 13px; line-height: 1.6; color: #2c2c2a; }
+.action-row { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 5px; }
+.dot { width: 5px; height: 5px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+.dot-purple { background: #533ab7; }
+.dot-green { background: #0f6e56; }
+.action-text { font-size: 13px; line-height: 1.6; }
+.decisions-box { border-left: 2px solid #9fe1cb; padding-left: 10px; }
+.error-box { background: #fcebeb; border: 0.5px solid #f09595; border-radius: 8px; padding: 11px 14px; font-size: 13px; color: #501313; margin-bottom: 12px; }
+.empty { text-align: center; padding: 50px 20px; color: #888780; font-size: 14px; }
+
+/* Google Sign-In button */
+.google-btn { display: flex; align-items: center; gap: 10px; background: #fff; border: 0.5px solid rgba(0,0,0,0.25); border-radius: 8px; padding: 9px 14px; cursor: pointer; font-size: 13px; font-weight: 500; color: #1a1a18; margin-top: 10px; width: 100%; justify-content: center; }
+.google-btn:hover { background: #f8f7f4; }
+.google-btn svg { flex-shrink: 0; }
+.connected-badge { display: inline-flex; align-items: center; gap: 5px; background: #eaf3de; color: #27500a; font-size: 12px; font-weight: 500; padding: 3px 9px; border-radius: 20px; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>📋 Daily Meeting Briefing</h1>
+    <p>All meetings · Full context · 6:30 AM</p>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-sm" onclick="showSetup()" id="settings-btn" style="display:none;">Settings</button>
+    <button class="btn btn-primary" id="gen-btn" onclick="generateSummary()">Refresh</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="date-bar">
+    <button class="nav-btn" onclick="shiftDate(-1)">‹</button>
+    <h2 id="date-label"></h2>
+    <button class="nav-btn" onclick="shiftDate(1)">›</button>
+  </div>
+  <div id="area"></div>
+</div>
+
+<!-- Google Identity Services -->
+<script src="https://accounts.google.com/gsi/client" async></script>
+
+<script>
+// ─── Config ───────────────────────────────────────────────────────────────────
+// Google OAuth — uses a public client ID scoped to calendar read-only.
+// Users authenticate via Google's own popup; no credentials leave the browser.
+const GOOGLE_CLIENT_ID = ''; // Filled in by user during setup
+const GCAL_SCOPE = 'https://www.googleapis.com/auth/calendar.readonly';
+const SKIP = ['lunch','focus time','reminder','flight','hotel','stay at','dinner','bowling','head to airport','update/send','invitation:'];
+
+let viewDate = new Date();
+let anthropicKey = '';
+let googleToken = '';   // short-lived Google OAuth access token
+let googleClientId = '';
+
+// ─── Persistence ──────────────────────────────────────────────────────────────
+function load() {
+  const p = new URLSearchParams(window.location.search);
+  anthropicKey = p.get('ak') || localStorage.getItem('ak') || '';
+  googleToken  = p.get('gt') || localStorage.getItem('gt') || '';
+  googleClientId = p.get('gc') || localStorage.getItem('gc') || '';
+  if (anthropicKey) localStorage.setItem('ak', anthropicKey);
+  if (googleToken)  localStorage.setItem('gt', googleToken);
+  if (googleClientId) localStorage.setItem('gc', googleClientId);
+}
+
+function saveAnthropicKey(v) { anthropicKey = v; localStorage.setItem('ak', v); }
+function saveGoogleClientId(v) { googleClientId = v; localStorage.setItem('gc', v); }
+function saveGoogleToken(v) { googleToken = v; localStorage.setItem('gt', v); }
+
+function buildBookmarkUrl() {
+  const base = window.location.href.split('?')[0];
+  const params = new URLSearchParams();
+  if (anthropicKey) params.set('ak', anthropicKey);
+  if (googleClientId) params.set('gc', googleClientId);
+  // Note: we do NOT embed the google token — it expires in 1hr. User re-auths via button.
+  return base + '?' + params.toString();
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function pad(n) { return String(n).padStart(2,'0'); }
+function fmtDate(d) {
+  const D=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const M=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return D[d.getDay()]+', '+M[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
+}
+function isoStart(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T00:00:00'; }
+function isoEnd(d){   return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T23:59:59'; }
+
+function shiftDate(n) {
+  viewDate.setDate(viewDate.getDate()+n);
+  document.getElementById('date-label').textContent = fmtDate(viewDate);
+  if (anthropicKey && googleToken) generateSummary();
+}
+
+// ─── Google OAuth (token flow — no backend needed) ────────────────────────────
+function signInWithGoogle() {
+  if (!googleClientId) {
+    alert('Please enter your Google Client ID first.');
+    return;
+  }
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: googleClientId,
+    scope: GCAL_SCOPE,
+    callback: (resp) => {
+      if (resp.error) { console.error(resp); return; }
+      saveGoogleToken(resp.access_token);
+      document.getElementById('google-status').innerHTML = '<span class="connected-badge">✓ Google Calendar connected</span>';
+      document.getElementById('google-auth-btn').style.display = 'none';
+    }
+  });
+  client.requestAccessToken();
+}
+
+// ─── Calendar API ─────────────────────────────────────────────────────────────
+async function fetchCalendarEvents(tMin, tMax) {
+  const url = new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events');
+  url.searchParams.set('timeMin', tMin + '-04:00');
+  url.searchParams.set('timeMax', tMax + '-04:00');
+  url.searchParams.set('singleEvents', 'true');
+  url.searchParams.set('orderBy', 'startTime');
+  url.searchParams.set('maxResults', '50');
+  url.searchParams.set('timeZone', 'America/New_York');
+
+  const r = await fetch(url.toString(), {
+    headers: { 'Authorization': 'Bearer ' + googleToken }
+  });
+  if (r.status === 401) {
+    googleToken = '';
+    localStorage.removeItem('gt');
+    throw new Error('GOOGLE_AUTH');
+  }
+  if (!r.ok) throw new Error('Google Calendar error: ' + r.status);
+  const d = await r.json();
+  return d.items || [];
+}
+
+// ─── Claude API ───────────────────────────────────────────────────────────────
+async function callClaude(system, user) {
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 3000, system, messages: [{ role: 'user', content: user }] })
+  });
+  if (r.status === 401) throw new Error('ANTHROPIC_AUTH');
+  if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.error?.message || 'Anthropic API error ' + r.status); }
+  const d = await r.json();
+  return d.content.map(b => b.text||'').join('');
+}
+
+// ─── Setup Screen ─────────────────────────────────────────────────────────────
+function showSetup(msg) {
+  document.getElementById('settings-btn').style.display = 'none';
+  document.getElementById('area').innerHTML = `
+    <div class="setup-card">
+      <h2>Good morning 👋</h2>
+      <p>AI-powered briefing for all your meetings — agenda, decisions, and context from prior sessions. Two quick steps to connect.</p>
+
+      <div class="step">
+        <div class="step-label">Step 1 of 3 — Anthropic API key</div>
+        <h3>Powers the AI summaries</h3>
+        <p>Get one free at <strong>console.anthropic.com</strong> → API Keys → Create Key.</p>
+        <div class="input-row">
+          <input type="password" id="ak-inp" placeholder="sk-ant-api03-..." value="${anthropicKey}" autocomplete="off" />
+          <button class="btn btn-primary" onclick="saveAK()">Save</button>
+        </div>
+        <p class="field-msg" id="ak-msg">${anthropicKey ? '✓ Key saved' : 'Stays in your browser only.'}</p>
+      </div>
+
+      <div class="step">
+        <div class="step-label">Step 2 of 3 — Google Calendar</div>
+        <h3>Connect your calendar</h3>
+        <p>You need a Google OAuth Client ID (free). Takes ~3 minutes:</p>
+        <ol style="font-size:13px;color:#5f5e5a;line-height:1.8;padding-left:18px;margin-top:6px;">
+          <li>Go to <strong>console.cloud.google.com</strong></li>
+          <li>Create a project → APIs & Services → Enable "Google Calendar API"</li>
+          <li>Credentials → Create → OAuth Client ID → Web Application</li>
+          <li>Add your Netlify URL to "Authorized JavaScript origins"</li>
+          <li>Copy the Client ID below</li>
+        </ol>
+        <div class="input-row" style="margin-top:10px;">
+          <input type="text" id="gc-inp" placeholder="123456789-abc...apps.googleusercontent.com" value="${googleClientId}" autocomplete="off" />
+          <button class="btn btn-primary" onclick="saveGC()">Save</button>
+        </div>
+        <p class="field-msg" id="gc-msg">${googleClientId ? '✓ Client ID saved' : ''}</p>
+        <div id="google-status" style="margin-top:8px;">
+          ${googleToken
+            ? '<span class="connected-badge">✓ Google Calendar connected</span>'
+            : '<button class="google-btn" id="google-auth-btn" onclick="signInWithGoogle()"><svg width="16" height="16" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Sign in with Google</button>'
+          }
+        </div>
+      </div>
+
+      <div class="step" id="bookmark-step">
+        <div class="step-label">Step 3 of 3 — Phone bookmark</div>
+        <h3>Save link for gym use</h3>
+        <p>Your Anthropic key and Google Client ID are baked into this URL. Bookmark it on your phone — then just tap "Sign in with Google" once per day (tokens last ~1 hour).</p>
+        <div class="url-box" id="bookmark-url" onclick="copyBookmark()">${buildBookmarkUrl()}</div>
+        <p class="field-msg" id="copy-hint">Tap to copy · Bookmark on your phone</p>
+      </div>
+
+      ${msg ? `<div class="error-box" style="margin-top:14px;">${msg}</div>` : ''}
+
+      ${anthropicKey && googleToken ? `<button class="btn btn-primary" onclick="generateSummary()" style="margin-top:16px;width:100%;padding:10px;">Generate today's briefing →</button>` : ''}
+    </div>`;
+}
+
+function saveAK() {
+  const v = document.getElementById('ak-inp').value.trim();
+  const msg = document.getElementById('ak-msg');
+  if (!v.startsWith('sk-ant-')) { msg.textContent = 'Doesn\'t look like a valid key. Check and try again.'; msg.className='field-msg error'; return; }
+  saveAnthropicKey(v);
+  msg.textContent = '✓ Key saved'; msg.className = 'field-msg ok';
+  document.getElementById('bookmark-url').textContent = buildBookmarkUrl();
+}
+
+function saveGC() {
+  const v = document.getElementById('gc-inp').value.trim();
+  const msg = document.getElementById('gc-msg');
+  if (!v.includes('googleusercontent.com')) { msg.textContent = 'Doesn\'t look like a valid Client ID.'; msg.className='field-msg error'; return; }
+  saveGoogleClientId(v);
+  msg.textContent = '✓ Client ID saved'; msg.className = 'field-msg ok';
+  document.getElementById('bookmark-url').textContent = buildBookmarkUrl();
+}
+
+function copyBookmark() {
+  const url = document.getElementById('bookmark-url').textContent;
+  const hint = document.getElementById('copy-hint');
+  navigator.clipboard.writeText(url).then(() => {
+    hint.textContent = '✓ Copied!'; hint.className = 'field-msg ok';
+    setTimeout(() => { hint.textContent = 'Tap to copy · Bookmark on your phone'; hint.className = 'field-msg'; }, 2500);
+  }).catch(() => { hint.textContent = 'Select all text above and copy manually'; });
+}
+
+// ─── Generate Briefing ────────────────────────────────────────────────────────
+async function generateSummary() {
+  if (!anthropicKey || !googleToken) { showSetup(); return; }
+
+  const btn = document.getElementById('gen-btn');
+  btn.textContent = 'Loading…'; btn.disabled = true;
+  document.getElementById('date-label').textContent = fmtDate(viewDate);
+  document.getElementById('area').innerHTML = `<div class="loading"><div class="spinner"></div><p>Fetching your calendar…</p></div>`;
+
+  try {
+    const todayMin = isoStart(viewDate), todayMax = isoEnd(viewDate);
+    const pastDate = new Date(viewDate); pastDate.setDate(pastDate.getDate()-14);
+    const pastMin = isoStart(pastDate);
+
+    const allToday = await fetchCalendarEvents(todayMin, todayMax);
+    const meetings = allToday.filter(e => {
+      if (!e.start?.dateTime) return false;
+      const t = (e.summary||'').toLowerCase();
+      return !SKIP.some(s => t.includes(s));
+    });
+
+    if (!meetings.length) {
+      document.getElementById('area').innerHTML = `<div class="empty">No meetings found for ${fmtDate(viewDate)}.</div>`;
+      document.getElementById('settings-btn').style.display = 'block';
+      btn.textContent = 'Refresh'; btn.disabled = false; return;
+    }
+
+    const recurIds = [...new Set(meetings.filter(m=>m.recurringEventId).map(m=>m.recurringEventId))];
+    let priorEvents = [];
+    if (recurIds.length) {
+      try {
+        const allPrior = await fetchCalendarEvents(pastMin, todayMin);
+        priorEvents = allPrior.filter(e => e.recurringEventId && recurIds.includes(e.recurringEventId));
+      } catch(e) { if (e.message === 'GOOGLE_AUTH') throw e; }
+    }
+
+    const system = `You are an executive morning briefing assistant. Return ONLY a JSON array, no markdown or code fences. Each item:
+- title: string
+- time: e.g. "9:15 AM – 10:00 AM"
+- attendeeCount: number
+- tags: short array e.g. ["recurring","team sync"]
+- summary: 2-3 sentence agenda overview
+- keyDecisions: array of 2-3 decisions or discussion points to prepare for
+- priorContext: 1-2 sentence pattern from past occurrences, or null
+- actionItems: array of 2-3 specific prep actions`;
+
+    let raw = await callClaude(system, JSON.stringify({
+      date: fmtDate(viewDate),
+      todayMeetings: meetings.map(m=>({
+        id:m.id, recurringEventId:m.recurringEventId, summary:m.summary,
+        start:m.start?.dateTime, end:m.end?.dateTime,
+        attendeeCount:(m.attendees||[]).length, description:m.description
+      })),
+      priorOccurrences: priorEvents.map(e=>({ summary:e.summary, start:e.start?.dateTime, recurringEventId:e.recurringEventId }))
+    }));
+
+    raw = raw.replace(/```json|```/g,'').trim();
+    let summaries;
+    try { summaries = JSON.parse(raw); }
+    catch { const m=raw.match(/\[[\s\S]*\]/); summaries=m?JSON.parse(m[0]):[]; }
+    if (!summaries.length) throw new Error('Could not parse briefing — tap Refresh to try again.');
+
+    const tagClass = t => {
+      const tl = t.toLowerCase();
+      if (['1-on-1','1on1'].some(x=>tl.includes(x))) return 'tag-purple';
+      if (['finance','budget'].some(x=>tl.includes(x))) return 'tag-amber';
+      if (['sales','revenue'].some(x=>tl.includes(x))) return 'tag-green';
+      return 'tag-blue';
+    };
+
+    let html = `<div class="briefing-header">
+      <h3>☀️ Morning briefing — ${fmtDate(viewDate)}</h3>
+      <p>${meetings.length} meeting${meetings.length!==1?'s':''} · ${recurIds.length} recurring · 14-day context</p>
+      <div class="stat-pills">
+        <span class="pill pill-gray">All meetings</span>
+        <span class="pill pill-blue">Decisions</span>
+        <span class="pill pill-purple">Action items</span>
+      </div>
+    </div>`;
+
+    for (const s of summaries) {
+      const tagsHtml = (s.tags||[]).map(t=>`<span class="tag ${tagClass(t)}">${t}</span>`).join('');
+      const decisionsHtml = (s.keyDecisions||[]).map(d=>`<div class="action-row"><div class="dot dot-green"></div><div class="action-text">${d}</div></div>`).join('');
+      const actionsHtml = (s.actionItems||[]).map(a=>`<div class="action-row"><div class="dot dot-purple"></div><div class="action-text">${a}</div></div>`).join('');
+      html += `<div class="meeting-card">
+        <div class="meeting-top">
+          <span class="time-chip">${s.time||''}</span>
+          <div style="flex:1;min-width:0">
+            <div class="meeting-title">${s.title||''}</div>
+            <div class="meeting-sub">${s.attendeeCount?s.attendeeCount+' attendee'+(s.attendeeCount!==1?'s':''):''}</div>
+            ${tagsHtml?`<div class="tags">${tagsHtml}</div>`:''}
+          </div>
+        </div>
+        <div class="section"><div class="section-label">Overview</div><div class="section-body">${s.summary||''}</div></div>
+        ${decisionsHtml?`<div class="section"><div class="section-label">Key decisions to prepare for</div><div class="decisions-box">${decisionsHtml}</div></div>`:''}
+        ${s.priorContext?`<div class="section"><div class="section-label">Prior meeting context</div><div class="context-box">${s.priorContext}</div></div>`:''}
+        ${actionsHtml?`<div class="section"><div class="section-label">Prep items</div>${actionsHtml}</div>`:''}
+      </div>`;
+    }
+
+    document.getElementById('area').innerHTML = html;
+    document.getElementById('settings-btn').style.display = 'block';
+
+  } catch(err) {
+    if (err.message === 'GOOGLE_AUTH') {
+      showSetup('<strong>Google Calendar session expired.</strong> Please sign in with Google again below.');
+    } else if (err.message === 'ANTHROPIC_AUTH') {
+      anthropicKey = ''; localStorage.removeItem('ak');
+      showSetup('<strong>Anthropic API key was rejected.</strong> Please enter a new one.');
+    } else {
+      document.getElementById('area').innerHTML = `<div class="error-box"><strong>Error:</strong> ${err.message}</div>`;
+      document.getElementById('settings-btn').style.display = 'block';
+    }
+  }
+  btn.textContent = 'Refresh'; btn.disabled = false;
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+document.getElementById('date-label').textContent = fmtDate(viewDate);
+load();
+if (anthropicKey && googleToken) generateSummary();
+else showSetup();
+</script>
+</body>
+</html>
